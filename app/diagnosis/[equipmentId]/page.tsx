@@ -58,13 +58,13 @@ export default async function DiagnosisPage({ params }: DiagnosisPageProps) {
               name: equipment.category.name,
             },
           }}
-          checklistItems={equipment.checklistItems.map((item) => ({
+          checklistItems={equipment.checklistItems.map((item: { id: string; item: string; description: string | null; order: number }) => ({
             id: item.id,
             item: item.item,
             description: item.description,
             order: item.order,
           }))}
-          availableParts={equipment.parts.map((part) => ({
+          availableParts={equipment.parts.map((part: { id: string; name: string; partNumber: string | null; price: number }) => ({
             id: part.id,
             name: part.name,
             partNumber: part.partNumber,
