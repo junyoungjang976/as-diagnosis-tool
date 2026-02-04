@@ -1,0 +1,108 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+// Equipment Categories: 가열설비, 조리설비, 가공설비, 후드, 냉장설비
+model EquipmentCategory {
+  id          String      @id @default(cuid())
+  name        String      // 가열설비, 조리설비 등
+  description String?
+  equipment   Equipment[]
+  createdAt   DateTime    @default(now())
+}
+
+model Equipment {
+  id             String            @id @default(cuid())
+  name           String            // 가스레인지, 튀김기 등
+  model          String?           // 모델명
+  categoryId     String
+  category       EquipmentCategory @relation(fields: [categoryId], references: [id])
+  checklistItems ChecklistItem[]
+  parts          Part[]
+  diagnoses      Diagnosis[]
+  createdAt      DateTime          @default(now())
+}
+
+model ChecklistItem {
+  id          String    @id @default(cuid())
+  equipmentId String
+  equipment   Equipment @relation(fields: [equipmentId], references: [id])
+  item        String    // 점검 항목
+  description String?   // 점검 방법 설명
+  order       Int       @default(0)
+  createdAt   DateTime  @default(now())
+}
+
+model Part {
+  id          String    @id @default(cuid())
+  equipmentId String
+  equipment   Equipment @relation(fields: [equipmentId], references: [id])
+  name        String    // 부품명
+  partNumber  String?   // 부품번호
+  price       Int       // 부품 단가 (원)
+  createdAt   DateTime  @default(now())
+}
+
+model LaborRate {
+  id        String   @id @default(cuid())
+  name      String   // 작업 유형 (교체, 수리, 점검 등)
+  rate      Int      // 공임 단가 (원)
+  createdAt DateTime @default(now())
+}
+
+model TravelRate {
+  id        String   @id @default(cuid())
+  distance  String   // 거리 구간 (10km 이내, 20km 이내 등)
+  rate      Int      // 출장비 (원)
+  createdAt DateTime @default(now())
+}
+
+model Diagnosis {
+  id              String    @id @default(cuid())
+  equipmentId     String
+  equipment       Equipment @relation(fields: [equipmentId], references: [id])
+  customerName    String?   // 고객명
+  customerContact String?   // 고객 연락처
+  customerEmail   String?   // 고객 이메일
+  location        String?   // 현장 위치
+  checkResults    String    // JSON: 체크리스트 결과 [{itemId, checked, note}]
+  notes           String?   // 종합 소견
+  status          String    @default("draft") // draft, completed
+  estimate        Estimate?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+model Estimate {
+  id          String      @id @default(cuid())
+  diagnosisId String      @unique
+  diagnosis   Diagnosis   @relation(fields: [diagnosisId], references: [id])
+  parts       String      // JSON: [{partId, name, quantity, unitPrice, total}]
+  laborCost   Int         // 총 공임
+  travelCost  Int         // 출장비
+  totalAmount Int         // 총 견적금액
+  validUntil  DateTime?   // 견적 유효기간
+  notes       String?     // 비고
+  pdfUrl      String?     // 생성된 PDF URL
+  status      String      @default("draft") // draft, sent, accepted, rejected
+  shareLinks  ShareLink[]
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+}
+
+model ShareLink {
+  id         String   @id @default(cuid())
+  token      String   @unique
+  estimateId String
+  estimate   Estimate @relation(fields: [estimateId], references: [id])
+  expiresAt  DateTime
+  viewCount  Int      @default(0)
+  createdAt  DateTime @default(now())
+}
